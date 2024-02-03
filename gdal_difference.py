@@ -21,7 +21,7 @@ def shapefile_geometric_relations_operations(_input_shapefile_1, _input_shapefil
     for i in range(84):
         input_shapefile_1 = _input_shapefile_1 + "{}.shp".format(i * 500 + 1000)
         input_shapefile_2 = _input_shapefile_2 + "{}.shp".format(i * 500 + 500)
-        out_shapefile = "2015_{0}_{1}条带".format(i * 500 + 500, i * 500 + 1000)
+        out_shapefile = "2000XD_{0}_{1}条带".format(i * 500 + 500, i * 500 + 1000)
         _ds_1, _ds_2 = ogr.Open(input_shapefile_1), ogr.Open(input_shapefile_2)
         _lyr_1, _lyr_2 = _ds_1.GetLayer(), _ds_2.GetLayer()
         shpdriver = ogr.GetDriverByName('ESRI Shapefile')
@@ -56,7 +56,7 @@ def shapefile_geometric_relations_operations(_input_shapefile_1, _input_shapefil
 
 
 if __name__ == '__main__':
-    _input_shapefile_1 = 'E:\\城市与区域生态\\大熊猫和竹\\道路对大熊猫栖息地的影响\\道路距离分析\\15缓冲区1229all\\2015all_'
-    _input_shapefile_2 = 'E:\\城市与区域生态\\大熊猫和竹\\道路对大熊猫栖息地的影响\\道路距离分析\\15缓冲区1229all\\2015all_'
-    result_shapfile = 'E:\\城市与区域生态\\大熊猫和竹\\道路对大熊猫栖息地的影响\\道路距离分析\\15all条带1229'
+    _input_shapefile_1 = 'E:\\城市与区域生态\\大熊猫和竹\\道路对大熊猫栖息地的影响\\道路距离分析\\00县道缓冲区1229all\\2000XD_'
+    _input_shapefile_2 = 'E:\\城市与区域生态\\大熊猫和竹\\道路对大熊猫栖息地的影响\\道路距离分析\\00县道缓冲区1229all\\2000XD_'
+    result_shapfile = 'E:\\城市与区域生态\\大熊猫和竹\\道路对大熊猫栖息地的影响\\道路距离分析\\00县道条带1229all'
     shapefile_geometric_relations_operations(_input_shapefile_1, _input_shapefile_2, result_shapfile, action=3)

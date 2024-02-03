@@ -1,25 +1,32 @@
-import matplotlib
-import numpy as np
-import pandas as pd
-import seaborn as sns
-from xgboost.sklearn import XGBClassifier
+import os
 
 from osgeo import gdal
-from sklearn import metrics
-from sklearn.metrics import accuracy_score, roc_auc_score
-from sklearn.model_selection import train_test_split
 from osgeo import osr
-import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from sklearn import metrics
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import accuracy_score
+
+from matplotlib import pyplot
+
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.datasets import load_iris
+import xgboost as xgb
+from xgboost import plot_importance
+from matplotlib import pyplot as plt
+from sklearn.model_selection import train_test_split
+from xgboost.sklearn import XGBClassifier
 import seaborn as sns
 import matplotlib
 import sklearn.model_selection as ms
 import shap
-from matplotlib import pyplot
-import os
+from sklearn.preprocessing import LabelEncoder
 
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-import sklearn.model_selection as ms
+# matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import MultipleLocator
 
 
 def kappa(confusion_matrix):
@@ -41,10 +48,12 @@ def f1(confusion_matrix):
 filePath = r'E:\城市与区域生态\大熊猫和竹\道路对大熊猫栖息地的影响\道路距离分析\适宜性分析数据准备\xgb和maxent数据准备'
 
 filename = os.listdir(filePath)
-data_all = np.zeros((1080 * 924, 23))
-m = 23 - 1
+
+data_all = np.zeros((1080 * 924, 24))
+m = 24 - 1
 for i in filename:
-    if i.split(".")[-1] == "tif" and i != "2000ES.tif":
+    # if i.split(".")[-1] == "tif" and i != "2010ES.tif" and i != "2000dis.tif" and i != "2015dis.tif" and i != "2015firstdis.tif" and i != "2015seconddis.tif":
+    if i.split(".")[-1] == "tif" and i != "2000ES.tif" and i != "2000dis.tif" and i != "2015firstdis.tif" and i != "2000firstdis.tif" and i != "2000seconddis.tif" and i != "2015seconddis.tif":
         rds = gdal.Open(filePath + '\\' + i)
         cols = rds.RasterXSize
         rows = rds.RasterYSize
@@ -67,7 +76,7 @@ data = pd.read_csv(r"E:\城市与区域生态\大熊猫和竹\道路对大熊猫
                    engine='python', header=0)
 data = data.iloc[:, :]
 data.info()
-X, Y = data[[x for x in data.columns if x != 'label' and x != 'FID']], data['label']
+X, Y = data[[x for x in data.columns if x != 'label' and x != 'FID'and x != '2015seconddis'and x != '2015firstdis']], data['label']
 X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.1, random_state=5)
 predict_X = data_all[:, :]
 
@@ -78,9 +87,19 @@ clf = XGBClassifier(objective="binary:logistic", seed=1024, )
                     gamma=0, subsample=0.78, colsample_bytree=0.57, reg_alpha=1e-5, reg_lambda=0.09, n_estimators=44"""
 clf.fit(X_train, y_train)
 train_predict = clf.predict(X_train)
-
-
 test_predict = clf.predict(X_test)
+
+cols_feature = ['slope', 'dem', 'bio9', 'bio8', 'bio7', 'bio6', 'bio5', 'bio4', 'bio3', 'bio2', 'bio19',
+                'bio18', 'bio17', 'bio16', 'bio15', 'bio14', 'bio13', 'bio12', 'bio11', 'bio10', 'bio1', 'aspect',
+                '2015dis', '2010ES' ]  #
+explainer = shap.TreeExplainer(clf, X_train, feature_perturbation="interventional", model_output='probability')
+shap_values = explainer.shap_values(X_train[cols_feature])
+
+shap.summary_plot(shap_values, X_train[cols_feature])
+shap.summary_plot(shap_values, X_train[cols_feature], plot_type="bar")
+
+shap.dependence_plot('2015firstdis', shap_values, X_train, interaction_index=None, show=False)
+shap.dependence_plot('2015seconddis', shap_values, X_train, interaction_index=None, show=False)
 
 # 利用accuracy（准确度）【预测正确的样本数目占总预测样本数目的比例】评估模型效果
 print('The accuracy of the Logistic Regression is:', metrics.accuracy_score(y_test, test_predict))
@@ -121,7 +140,7 @@ print(data_probability)
 data_probability.shape = (rows, cols)
 driver = gdal.GetDriverByName('GTiff')
 # dst_filename = r"E:\城市与区域生态\大熊猫和竹\种群动态模拟_lstm\四调概率输出10xgb_lstm.tif"
-dst_ds = driver.Create(r"E:\城市与区域生态\大熊猫和竹\道路对大熊猫栖息地的影响\道路距离分析\适宜性分析数据准备\全山系适宜性\四调概率输出.tif", cols, rows, 1,
+dst_ds = driver.Create(r"E:\城市与区域生态\大熊猫和竹\道路对大熊猫栖息地的影响\道路距离分析\适宜性分析数据准备\全山系适宜性\四调概率输出dis.tif", cols, rows, 1,
                        gdal.GDT_Float64)
 dst_ds.SetGeoTransform(list(geotransform))
 srs = osr.SpatialReference()
